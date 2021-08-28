@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -69,6 +70,13 @@ func goEndpoint(c *gin.Context, cfg *Config) {
 func serveCommand(flags commonFlags) {
 	r := gin.Default()
 
+	initialCfg, err := loadConfig(flags.ConfigPath)
+
+	if err != nil {
+		fmt.Printf("ERROR: loading configuration at startup failed: %s\n", err)
+		os.Exit(1)
+	}
+
 	endpoint := func(cb func(c *gin.Context, cfg *Config)) func(c *gin.Context) {
 		return func(c *gin.Context) {
 			cfg, err := loadConfig(flags.ConfigPath)
@@ -84,5 +92,5 @@ func serveCommand(flags commonFlags) {
 	r.GET("/eval/:query", endpoint(evalEndpoint))
 	r.GET("/go/:query", endpoint(goEndpoint))
 
-	r.Run()
+	r.Run(fmt.Sprintf("127.0.0.1:%d", initialCfg.Port))
 }

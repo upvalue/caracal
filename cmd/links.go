@@ -15,6 +15,7 @@ type Variable struct {
 type Config struct {
 	Link     []Link
 	Variable []Variable
+	Port     int
 
 	// Derived fields
 	Links     map[string]Link
@@ -36,6 +37,10 @@ func loadConfig(configPath string) (*Config, error) {
 
 	for _, v := range cfg.Variable {
 		cfg.Variables[v.Key] = v.Value
+	}
+
+	if cfg.Port == 0 {
+		cfg.Port = 8080
 	}
 
 	return &cfg, nil
