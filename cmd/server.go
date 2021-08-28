@@ -80,7 +80,7 @@ func serveCommand(flags commonFlags) {
 		}
 	}
 
-	r.GET("/state", endpoint(stateEndpoint))
+	r.GET("/config", endpoint(stateEndpoint))
 	r.GET("/eval/:query", endpoint(evalEndpoint))
 	r.GET("/go/:query", endpoint(goEndpoint))
 
