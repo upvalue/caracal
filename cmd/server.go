@@ -1,23 +1,68 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
+func reportError(c *gin.Context, err error) {
+	c.JSON(500, gin.H{
+		"error": err.Error(),
+	})
+}
+
 func stateEndpoint(c *gin.Context, cfg *Config) {
 	c.JSON(200, cfg)
 }
 
-func goEndpoint(c *gin.Context, cfg *Config) {
-	linkname := c.Param("linkname")
-	link, ok := cfg.Links[linkname]
+func evaluateQuery(cfg *Config, query string) (string, bool, error) {
+	link, ok := cfg.Links[query]
 	if !ok {
-		c.JSON(404, gin.H{"error": fmt.Sprintf("Link %s not found", linkname)})
+		return "", false, nil
 	} else {
-		c.Redirect(http.StatusFound, link.Url)
+		tmpl, err := template.New(link.Name).Parse(link.Url)
+		if err != nil {
+			return "", false, err
+		}
+		var out bytes.Buffer
+		if err = tmpl.Execute(&out, cfg.Variables); err != nil {
+			return "", false, err
+		}
+		result := out.String()
+		return result, true, nil
+	}
+}
+
+// handleEvaluate pulls out the common parts of go/ and eval/
+func handleEvaluation(c *gin.Context, cfg *Config) (string, bool) {
+	query := c.Param("query")
+	result, found, err := evaluateQuery(cfg, query)
+	if err != nil {
+		reportError(c, err)
+	} else if found == false {
+		c.JSON(404, gin.H{"error": fmt.Sprintf("query %s could not be resolved: %s", query, err)})
+	} else {
+		fmt.Printf("eval: %s => %s\n", query, result)
+		return result, true
+	}
+	return "", false
+}
+
+func evalEndpoint(c *gin.Context, cfg *Config) {
+	result, cont := handleEvaluation(c, cfg)
+	if cont {
+		c.JSON(200, result)
+	}
+}
+
+func goEndpoint(c *gin.Context, cfg *Config) {
+	result, cont := handleEvaluation(c, cfg)
+	if cont {
+		c.Redirect(http.StatusFound, result)
 	}
 }
 
@@ -36,7 +81,8 @@ func serveCommand(flags commonFlags) {
 	}
 
 	r.GET("/state", endpoint(stateEndpoint))
-	r.GET("/go/:linkname", endpoint(goEndpoint))
+	r.GET("/eval/:query", endpoint(evalEndpoint))
+	r.GET("/go/:query", endpoint(goEndpoint))
 
 	r.Run()
 }

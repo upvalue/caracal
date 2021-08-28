@@ -1,3 +1,11 @@
+[[variable]]
+key = "ExampleVariable"
+value = "zombo.com"
+
 [[link]]
 name = "google"
 url = "https://google.com"
+
+[[link]]
+name = "zombo"
+url = "https://{{.ExampleVariable}}/"

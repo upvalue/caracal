@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	"github.com/segmentio/cli"
 )
 
@@ -28,12 +27,6 @@ func configCommand(flags linksFlags) {
 	for _, link := range cfg.Link {
 		fmt.Printf("%s => %s\n", link.Name, link.Url)
 	}
-}
-
-func reportError(c *gin.Context, err error) {
-	c.JSON(500, gin.H{
-		"error": err.Error(),
-	})
 }
 
 func CommandLine() {

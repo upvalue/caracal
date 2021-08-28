@@ -7,9 +7,18 @@ type Link struct {
 	Url  string
 }
 
+type Variable struct {
+	Key   string
+	Value string
+}
+
 type Config struct {
-	Link  []Link
-	Links map[string]Link
+	Link     []Link
+	Variable []Variable
+
+	// Derived fields
+	Links     map[string]Link
+	Variables map[string]string
 }
 
 func loadConfig(configPath string) (*Config, error) {
@@ -17,9 +26,17 @@ func loadConfig(configPath string) (*Config, error) {
 	if _, err := toml.DecodeFile(configPath, &cfg); err != nil {
 		return nil, err
 	}
+
 	cfg.Links = make(map[string]Link)
+	cfg.Variables = make(map[string]string)
+
 	for _, link := range cfg.Link {
 		cfg.Links[link.Name] = link
 	}
+
+	for _, v := range cfg.Variable {
+		cfg.Variables[v.Key] = v.Value
+	}
+
 	return &cfg, nil
 }
